@@ -1,9 +1,2 @@
 # selic
 Análise Interativa: O Impacto da Taxa Selic no Brasil (com IA). Esta Aplicação de Página Única (SPA) interativa foi desenvolvida para democratizar a compreensão do complexo impacto da Taxa Selic de 15% no Brasil (Jun/2025). Oferece uma visualização clara dos efeitos na economia, finanças pessoais, e empresas, com seções dedicadas a histórico, impactos detalhados e projeções futuras.
-
-Destaques:
-
-Painel Interativo: Navegação intuitiva por gráficos de histórico da Selic, comparativos de investimentos e dados de recuperação judicial.
-Análise Setorial: Explore como diferentes setores (Transportes, Agronegócio, Bens de Capital, etc.) são afetados.
-Assistente de IA: Utilize a integração com a API Gemini para obter análises personalizadas e respostas a perguntas complexas sobre cenários econômicos e financeiros específicos, como se estivesse conversando com um especialista.
-Tecnologias: Desenvolvido em HTML, Tailwind CSS para design responsivo, Chart.js para gráficos dinâmicos, e Vanilla JavaScript para interatividade, incluindo chamadas à API Gemini (gemini-2.0-flash).
