@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análise Interativa com IA: O Impacto da Taxa Selic no Brasil</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Slate Neutrals with Blue Accent -->
+    <!-- Application Structure Plan: A single-page dashboard application with a sticky top navigation bar for quick access to thematic sections: 'Visão Geral', 'Impacto Pessoal', 'Impacto Empresarial', 'Projeções', and a new 'Análise com IA' section. This structure maintains the user-driven exploration flow and adds a powerful, interactive AI-powered module for personalized analysis. The AI assistant uses predefined prompts and user input to generate custom explanations via the Gemini API, deepening user engagement and understanding. -->
+    <!-- Visualization & Content Choices: 
+        - Goal: Contextualize the current rate. Viz: Line Chart (SELIC History). Library: Chart.js.
+        - Goal: Compare investment options. Viz: Horizontal Bar Chart (Investment Returns). Library: Chart.js.
+        - Goal: Show sector-specific impacts. Viz: Interactive Toggles (Buttons). Method: Vanilla JS.
+        - Goal: Display future outlook. Viz: Line Chart (SELIC Projections). Library: Chart.js.
+        - Goal: Provide personalized AI-driven analysis. Viz: Interactive chat-like interface. Interaction: User selects a persona/prompt, enters details, and clicks a button to call the Gemini API. The response is displayed dynamically. Justification: This new feature transforms the static report into a dynamic conversation, allowing users to query the data in natural language and receive tailored insights, significantly enhancing the application's value. Library/Method: Gemini API (gemini-2.0-flash) via Fetch API.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+        }
+        .nav-link:hover, .nav-link.active {
+            border-bottom-color: #2563eb; /* blue-600 */
+            color: #1e293b; /* slate-800 */
+        }
+        .sector-btn.active {
+            background-color: #2563eb;
+            color: white;
+        }
+        .sector-btn, .prompt-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .prompt-btn.active {
+            background-color: #1d4ed8;
+            color: white;
+            border-color: #1d4ed8;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loader {
+            border: 2px solid #e2e8f0;
+            border-top-color: #2563eb;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl font-bold text-slate-800">Análise da Selic</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#visao-geral" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Visão Geral</a>
+                        <a href="#impacto-pessoal" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Impacto Pessoal</a>
+                        <a href="#impacto-empresarial" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Impacto Empresarial</a>
+                        <a href="#futuro" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600">Projeções</a>
+                        <a href="#analise-ia" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-slate-600 bg-blue-100 text-blue-700">Análise com IA ✨</a>
+                    </div>
+                </div>
+                 <div class="md:hidden">
+                    <select id="mobile-nav" class="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
+                        <option value="#visao-geral">Visão Geral</option>
+                        <option value="#impacto-pessoal">Impacto Pessoal</option>
+                        <option value="#impacto-empresarial">Impacto Empresarial</option>
+                        <option value="#futuro">Projeções</option>
+                        <option value="#analise-ia">Análise com IA ✨</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+
+        <section id="visao-geral" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">A Selic a 15%: O Remédio Amargo para a Economia</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Em junho de 2025, o Banco Central elevou a taxa básica de juros para o maior nível em quase duas décadas. Explore como essa decisão, destinada a controlar a inflação, reverbera por toda a sociedade brasileira.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center">
+                    <span class="text-sm font-medium text-slate-500">Taxa Selic Atual</span>
+                    <span class="text-4xl font-bold text-blue-600 mt-2">15,00%</span>
+                    <span class="text-xs text-slate-400">a.a. (Junho/2025)</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center">
+                    <span class="text-sm font-medium text-slate-500">Projeção PIB 2025</span>
+                    <span class="text-4xl font-bold text-slate-800 mt-2">1,9%</span>
+                    <span class="text-xs text-slate-400">Fonte: Banco Central</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center">
+                    <span class="text-sm font-medium text-slate-500">Meta de Inflação</span>
+                    <span class="text-4xl font-bold text-slate-800 mt-2">3,0%</span>
+                     <span class="text-xs text-slate-400">Projeção 2026: 3,6% (Copom)</span>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md flex flex-col items-center text-center">
+                    <span class="text-sm font-medium text-slate-500">Câmbio (Tendência)</span>
+                    <span class="text-4xl font-bold text-slate-800 mt-2">VALORIZAÇÃO</span>
+                    <span class="text-xs text-slate-400">do Real frente ao Dólar</span>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <h3 class="text-xl font-bold text-slate-900 mb-1">Histórico da Taxa Selic</h3>
+                <p class="text-slate-600 mb-4">A taxa atual de 15% é uma das mais altas da história recente, refletindo o esforço do Banco Central para conter pressões inflacionárias. O gráfico abaixo mostra a volatilidade e os ciclos de aperto monetário no Brasil desde 1999.</p>
+                <div class="chart-container h-72 md:h-96 max-w-4xl">
+                    <canvas id="selicHistoryChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="impacto-pessoal" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">O Impacto no seu Bolso</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Juros mais altos significam crédito mais caro, menor poder de compra, mas também melhores oportunidades de investimento. Veja como a Selic a 15% afeta diretamente a sua vida financeira.</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h4 class="font-bold text-lg text-slate-800">Crédito mais Caro e Restrito</h4>
+                        <p class="mt-2 text-slate-600">Financiar um carro, um imóvel ou até mesmo parcelar compras no cartão de crédito fica mais difícil e custoso. A Selic elevada serve como base para todos os juros da economia, desestimulando o consumo e o endividamento das famílias.</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl shadow-md">
+                        <h4 class="font-bold text-lg text-slate-800">Redução do Poder de Compra</h4>
+                        <p class="mt-2 text-slate-600">A política de juros altos visa frear a inflação, mas, no curto prazo, o custo de vida continua pressionado. A circulação menor de dinheiro na economia impacta a capacidade de compra, especialmente das famílias de baixa renda.</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                     <h3 class="text-xl font-bold text-slate-900 mb-1">Onde Investir? Poupança vs. Renda Fixa</h3>
+                     <p class="text-slate-600 mb-4">Com a Selic alta, a renda fixa se torna muito atraente. O gráfico compara o rendimento líquido estimado de R$ 10.000 em um ano, mostrando por que a poupança perde sua atratividade.</p>
+                    <div class="chart-container h-72 md:h-80 max-w-xl">
+                        <canvas id="investmentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="impacto-empresarial" class="scroll-mt-20">
+             <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">O Desafio para as Empresas</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Para as empresas, juros altos significam acesso mais caro ao capital, freio nos investimentos e pressão nas margens de lucro. O resultado é um aumento recorde na inadimplência e nos pedidos de recuperação judicial.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                 <div class="bg-white p-6 rounded-xl shadow-md">
+                     <h3 class="text-xl font-bold text-slate-900 mb-1">Crise de Solvência</h3>
+                     <p class="text-slate-600 mb-4">O número de empresas inadimplentes atingiu 7,2 milhões em maio de 2025. Os pedidos de recuperação judicial subiram 61,8% em 2024, um reflexo direto do encarecimento do crédito e da desaceleração econômica.</p>
+                    <div class="chart-container h-72 md:h-80 max-w-xl">
+                        <canvas id="recoveryChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md">
+                     <h3 class="text-xl font-bold text-slate-900 mb-1">Setores: Ganhadores e Perdedores</h3>
+                     <p class="text-slate-600 mb-4">O impacto não é uniforme. Setores que dependem de crédito e têm receitas em Real sofrem mais, enquanto empresas com dívidas ou receitas em dólar podem ser mais resilientes. Selecione uma categoria para ver os detalhes.</p>
+                     
+                     <div class="flex space-x-2 mb-4">
+                         <button id="btn-perdedores" class="sector-btn flex-1 px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg active">Mais Afetados</button>
+                         <button id="btn-ganhadores" class="sector-btn flex-1 px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-lg">Menos Afetados</button>
+                     </div>
+
+                     <div id="content-perdedores" class="space-y-3">
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <h5 class="font-bold text-red-800">Transportes</h5>
+                            <p class="text-sm text-red-700">Intensivo em capital com dívidas atreladas ao CDI. Queda de lucro projetada de 19% a 45%.</p>
+                        </div>
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <h5 class="font-bold text-red-800">Propriedades Comerciais</h5>
+                            <p class="text-sm text-red-700">Alta alavancagem financeira com 84% da dívida atrelada ao CDI.</p>
+                        </div>
+                        <div class="p-3 bg-red-50 border border-red-200 rounded-lg">
+                            <h5 class="font-bold text-red-800">Agronegócio</h5>
+                            <p class="text-sm text-red-700">Impactado pela alta alavancagem e dívidas atreladas ao CDI.</p>
+                        </div>
+                     </div>
+
+                     <div id="content-ganhadores" class="space-y-3 hidden">
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <h5 class="font-bold text-green-800">Bens de Capital</h5>
+                            <p class="text-sm text-green-700">Mais de 89% da dívida atrelada ao dólar, mitigando o aperto monetário local.</p>
+                        </div>
+                        <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <h5 class="font-bold text-green-800">Óleo, Gás e Petroquímicos</h5>
+                            <p class="text-sm text-green-700">Receitas majoritariamente em dólar (92%) oferecem proteção natural.</p>
+                        </div>
+                         <div class="p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <h5 class="font-bold text-green-800">Papel & Celulose</h5>
+                            <p class="text-sm text-green-700">Parte significativa da dívida em dólar e com proteção (hedge).</p>
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="futuro" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Olhando para o Futuro</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">O mercado projeta uma queda gradual da Selic nos próximos anos, mas o cenário ainda inspira cautela. A trajetória dependerá do controle da inflação e, crucialmente, da disciplina fiscal do governo.</p>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                 <div class="bg-white p-6 rounded-xl shadow-md">
+                     <h3 class="text-xl font-bold text-slate-900 mb-1">Projeções para a Taxa Selic</h3>
+                     <p class="text-slate-600 mb-4">As expectativas apontam para uma manutenção de juros em patamar elevado, com reduções graduais apenas a partir de 2026, caso a inflação convirja para a meta.</p>
+                    <div class="chart-container h-72 md:h-80 max-w-xl">
+                        <canvas id="futureSelicChart"></canvas>
+                    </div>
+                </div>
+                 <div class="bg-white p-6 rounded-xl shadow-md space-y-4">
+                     <div>
+                        <h4 class="font-bold text-lg text-slate-800">Principais Riscos</h4>
+                         <ul class="mt-2 list-disc list-inside space-y-1 text-slate-600">
+                             <li><b>Inflação Persistente:</b> Pressões de preços podem ser mais resilientes do que o esperado.</li>
+                             <li><b>Descontrole Fiscal:</b> Aumento de gastos públicos pode forçar a manutenção dos juros altos por mais tempo.</li>
+                             <li><b>Desaceleração Econômica:</b> Risco de aprofundamento da crise com aumento do desemprego.</li>
+                         </ul>
+                     </div>
+                     <div>
+                        <h4 class="font-bold text-lg text-slate-800">Principais Oportunidades</h4>
+                         <ul class="mt-2 list-disc list-inside space-y-1 text-slate-600">
+                              <li><b>Renda Fixa Atrativa:</b> Investidores se beneficiam de altos retornos reais com segurança.</li>
+                              <li><b>Apreciação do Real:</b> Moeda mais forte ajuda a conter a inflação de produtos importados.</li>
+                              <li><b>Reestruturação e Eficiência:</b> Crise força empresas a se tornarem mais enxutas e competitivas.</li>
+                         </ul>
+                     </div>
+                </div>
+            </div>
+        </section>
+
+        <hr class="my-16 border-slate-200">
+
+        <section id="analise-ia" class="scroll-mt-20">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl md:text-4xl font-bold text-slate-900">Análise com IA ✨</h2>
+                <p class="mt-4 max-w-3xl mx-auto text-lg text-slate-600">Use nosso assistente virtual para tirar dúvidas e obter análises personalizadas. Selecione um perfil ou faça sua pergunta sobre como a alta da Selic pode te afetar.</p>
+            </div>
+
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-md max-w-4xl mx-auto">
+                <div class="mb-4">
+                    <label class="font-semibold text-slate-800 mb-2 block">1. Escolha um perfil para começar:</label>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <button id="prompt-leigo" class="prompt-btn border border-slate-300 p-3 rounded-lg text-left hover:bg-slate-100">
+                            <h5 class="font-bold">Explique para um Leigo</h5>
+                            <p class="text-sm text-slate-500">Simplifique um tópico econômico.</p>
+                        </button>
+                        <button id="prompt-pessoal" class="prompt-btn border border-slate-300 p-3 rounded-lg text-left hover:bg-slate-100">
+                             <h5 class="font-bold">Impacto Pessoal</h5>
+                            <p class="text-sm text-slate-500">Analise uma situação financeira pessoal.</p>
+                        </button>
+                        <button id="prompt-empresa" class="prompt-btn border border-slate-300 p-3 rounded-lg text-left hover:bg-slate-100">
+                             <h5 class="font-bold">Impacto Empresarial</h5>
+                            <p class="text-sm text-slate-500">Receba conselhos para sua empresa.</p>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="ai-prompt" class="font-semibold text-slate-800 mb-2 block">2. Descreva sua dúvida ou situação:</label>
+                    <textarea id="ai-prompt" rows="4" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Exemplo: Tenho um financiamento de carro de R$ 50.000 e R$ 10.000 na poupança. O que devo fazer?"></textarea>
+                </div>
+                
+                <button id="generate-analysis" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 flex items-center justify-center disabled:bg-slate-400">
+                    <span id="btn-text">Gerar Análise com IA</span>
+                    <div id="btn-loader" class="loader w-5 h-5 rounded-full ml-3 hidden"></div>
+                </button>
+
+                <div id="ai-result-container" class="mt-6 hidden">
+                    <h4 class="text-lg font-bold text-slate-900 mb-2">Análise Personalizada:</h4>
+                    <div id="ai-result" class="prose max-w-none prose-slate bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <p>Aguardando análise...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-300 mt-16">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4 text-center text-sm">
+            <p>Análise interativa baseada no relatório "O Impacto Abrangente da Taxa Selic a 15% no Brasil" de Junho de 2025.</p>
+            <p>Este é um projeto de visualização de dados e não constitui recomendação financeira. As análises de IA são geradas por um modelo de linguagem e podem conter imprecisões.</p>
+        </div>
+    </footer>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const wrapText = (ctx, text, maxWidth) => {
+        const words = text.split(' ');
+        let lines = [];
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            let word = words[i];
+            let width = ctx.measureText(currentLine + " " + word).width;
+            if (width < maxWidth) {
+                currentLine += " " + word;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+        lines.push(currentLine);
+        return lines;
+    };
+    
+    const commonChartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                labels: {
+                    color: '#475569'
+                }
+            },
+            tooltip: {
+                backgroundColor: '#1e293b',
+                titleColor: '#f1f5f9',
+                bodyColor: '#f1f5f9',
+                padding: 10,
+                cornerRadius: 4,
+                boxPadding: 4,
+                callbacks: {
+                    label: function(context) {
+                        let label = context.dataset.label || '';
+                        if (label) {
+                            label += ': ';
+                        }
+                        if (context.parsed.y !== null) {
+                            label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                        }
+                        if (context.parsed.x !== null && context.dataset.label.includes('Taxa')) {
+                             label = `Taxa: ${context.parsed.y.toFixed(2)}%`;
+                        }
+                         if (context.dataset.label.includes('Recuperações')) {
+                             label = `Pedidos: ${context.parsed.y}`;
+                        }
+                        return label;
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                ticks: { color: '#475569' },
+                grid: { color: '#e2e8f0' }
+            },
+            x: {
+                ticks: { color: '#475569' },
+                grid: { display: false }
+            }
+        }
+    };
+
+    const selicHistoryCtx = document.getElementById('selicHistoryChart').getContext('2d');
+    new Chart(selicHistoryCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mar/99', 'Jul/06', 'Ago/20', '2015-16', 'Jun/25'],
+            datasets: [{
+                label: 'Taxa Selic (% a.a.)',
+                data: [45, 15.25, 2, 14.25, 15],
+                borderColor: '#2563eb',
+                backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                fill: true,
+                tension: 0.1
+            }]
+        },
+        options: { ...commonChartOptions }
+    });
+    
+    const investmentCtx = document.getElementById('investmentChart').getContext('2d');
+    new Chart(investmentCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Poupança', 'CDB (100% CDI)', 'Tesouro Selic'],
+            datasets: [{
+                label: 'Rendimento Líquido (R$)',
+                data: [10677, 11225.12, 11237.50],
+                backgroundColor: [
+                    'rgba(251, 146, 60, 0.7)',
+                    'rgba(59, 130, 246, 0.7)',
+                    'rgba(37, 99, 235, 0.9)'
+                ],
+                borderColor: [
+                    'rgb(251, 146, 60)',
+                    'rgb(59, 130, 246)',
+                    'rgb(37, 99, 235)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...commonChartOptions,
+            indexAxis: 'y',
+            scales: {
+                x: {
+                    beginAtZero: false,
+                    min: 10500,
+                    ticks: {
+                        color: '#475569',
+                        callback: function(value) {
+                            return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value);
+                        }
+                    },
+                     grid: { color: '#e2e8f0' }
+                },
+                y: {
+                    ticks: { color: '#475569' },
+                    grid: { display: false }
+                }
+            },
+            plugins: { ...commonChartOptions.plugins, legend: { display: false } }
+        }
+    });
+
+    const recoveryCtx = document.getElementById('recoveryChart').getContext('2d');
+    new Chart(recoveryCtx, {
+        type: 'bar',
+        data: {
+            labels: ['2023 (Base)', '2024 (+61.8%)'],
+            datasets: [{
+                label: 'Pedidos de Recuperação Judicial',
+                data: [1405, 2273],
+                backgroundColor: [
+                    'rgba(156, 163, 175, 0.7)',
+                    'rgba(239, 68, 68, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(156, 163, 175)',
+                    'rgb(239, 68, 68)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            ...commonChartOptions,
+            plugins: { ...commonChartOptions.plugins, legend: { display: false } }
+        }
+    });
+    
+    const futureSelicCtx = document.getElementById('futureSelicChart').getContext('2d');
+    new Chart(futureSelicCtx, {
+        type: 'line',
+        data: {
+            labels: ['Jun/25', '2026', '2027'],
+            datasets: [{
+                label: 'Taxa Selic Projetada (% a.a.)',
+                data: [15, 12.5, 10],
+                borderColor: '#16a34a',
+                backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                fill: true,
+                tension: 0.1,
+                pointRadius: 5,
+                pointBackgroundColor: '#16a34a',
+            }]
+        },
+        options: { ...commonChartOptions, scales: { y: { ...commonChartOptions.scales.y, min: 8 }} }
+    });
+
+    const btnPerdedores = document.getElementById('btn-perdedores');
+    const btnGanhadores = document.getElementById('btn-ganhadores');
+    const contentPerdedores = document.getElementById('content-perdedores');
+    const contentGanhadores = document.getElementById('content-ganhadores');
+
+    btnPerdedores.addEventListener('click', () => {
+        btnPerdedores.classList.add('active');
+        btnGanhadores.classList.remove('active');
+        contentPerdedores.classList.remove('hidden');
+        contentGanhadores.classList.add('hidden');
+    });
+
+    btnGanhadores.addEventListener('click', () => {
+        btnGanhadores.classList.add('active');
+        btnPerdedores.classList.remove('active');
+        contentGanhadores.classList.remove('hidden');
+        contentPerdedores.classList.add('hidden');
+    });
+
+    const mobileNav = document.getElementById('mobile-nav');
+    mobileNav.addEventListener('change', (event) => {
+        const targetId = event.target.value;
+        const targetElement = document.querySelector(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth' });
+        }
+    });
+
+    const navLinks = document.querySelectorAll('.nav-link');
+    const sections = document.querySelectorAll('main section');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            if (pageYOffset >= sectionTop - 80) {
+                current = section.getAttribute('id');
+            }
+        });
+
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href').includes(current)) {
+                link.classList.add('active');
+            }
+        });
+    });
+    
+    // Gemini AI Section Logic
+    const aiPromptTextarea = document.getElementById('ai-prompt');
+    const promptButtons = document.querySelectorAll('.prompt-btn');
+    const generateBtn = document.getElementById('generate-analysis');
+    const btnText = document.getElementById('btn-text');
+    const btnLoader = document.getElementById('btn-loader');
+    const aiResultContainer = document.getElementById('ai-result-container');
+    const aiResultDiv = document.getElementById('ai-result');
+
+    const prompts = {
+        leigo: "Explique de forma muito simples, como se eu fosse leigo no assunto, o que é a taxa Selic e por que ela a 15% afeta o preço das coisas no supermercado.",
+        pessoal: "Tenho um financiamento de carro no valor de R$ 50.000 com juros pós-fixados e uma poupança de R$ 10.000. Com a Selic a 15%, o que é mais inteligente fazer: amortizar a dívida ou investir o dinheiro?",
+        empresa: "Sou dono de uma pequena cafeteria que depende de capital de giro e está com as margens apertadas. Que estratégias práticas posso adotar para sobreviver a este período de Selic a 15%?"
+    };
+
+    promptButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            promptButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            const promptType = button.id.split('-')[1];
+            aiPromptTextarea.value = prompts[promptType];
+        });
+    });
+
+    generateBtn.addEventListener('click', async () => {
+        const userPrompt = aiPromptTextarea.value.trim();
+        if (!userPrompt) {
+            alert("Por favor, descreva sua dúvida ou situação.");
+            return;
+        }
+
+        toggleLoading(true);
+
+        const reportContext = `
+            Contexto Econômico (Junho de 2025): A Taxa Selic está em 15% ao ano.
+            - Objetivo do BC: Combater a inflação persistente.
+            - Impacto no Crédito: Torna empréstimos e financiamentos (imobiliário, veículos) muito mais caros, desestimulando o consumo.
+            - Impacto no Poder de Compra: Reduz o poder de compra, pois a economia desacelera.
+            - Impacto nos Investimentos: A poupança rende pouco (aprox. 6,7% ao ano). Investimentos em Renda Fixa (Tesouro Selic, CDBs) se tornam muito atraentes, com rendimentos brutos próximos de 15%.
+            - Impacto nas Empresas: Custo de capital aumenta, dificultando investimentos e pressionando margens. A inadimplência e os pedidos de recuperação judicial estão em alta, especialmente para pequenas empresas.
+            - Futuro: A expectativa é de que a Selic caia lentamente, para 12,5% em 2026 e 10% em 2027.
+        `;
+        
+        const fullPrompt = `
+            Você é um assistente de análise econômica. Com base no contexto abaixo, responda à pergunta do usuário de forma clara, didática e em português do Brasil.
+
+            ${reportContext}
+
+            Pergunta do Usuário: "${userPrompt}"
+
+            Análise:
+        `;
+        
+        try {
+            const resultText = await callGeminiApi(fullPrompt);
+            displayResult(resultText);
+        } catch (error) {
+            console.error("Gemini API Error:", error);
+            displayResult("Desculpe, ocorreu um erro ao tentar gerar a análise. Por favor, tente novamente mais tarde.");
+        } finally {
+            toggleLoading(false);
+        }
+    });
+
+    function toggleLoading(isLoading) {
+        generateBtn.disabled = isLoading;
+        if (isLoading) {
+            btnText.classList.add('hidden');
+            btnLoader.classList.remove('hidden');
+        } else {
+            btnText.classList.remove('hidden');
+            btnLoader.classList.add('hidden');
+        }
+    }
+    
+    function displayResult(text) {
+        aiResultContainer.classList.remove('hidden');
+        aiResultDiv.innerHTML = text.replace(/\n/g, '<br>'); // Simple formatting
+    }
+
+    async function callGeminiApi(prompt) {
+        let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+        const payload = { contents: chatHistory };
+        const apiKey = "";
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.candidates && result.candidates.length > 0 &&
+            result.candidates[0].content && result.candidates[0].content.parts &&
+            result.candidates[0].content.parts.length > 0) {
+            return result.candidates[0].content.parts[0].text;
+        } else {
+            console.log("Unexpected API response structure:", result);
+            throw new Error("Não foi possível extrair o texto da resposta da API.");
+        }
+    }
+});
+</script>
+</body>
+</html>
